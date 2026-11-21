@@ -17,9 +17,9 @@
 
 ## Установка
 
-**Linux x86-64.** Установите [Flatpak](https://flathub.org/en/setup) и скачайте пакет со [страницы выпусков](https://github.com/sqeezy-53/school-day-flatpak/releases). [Пакет 0.6.2](https://github.com/sqeezy-53/school-day/releases/download/v0.6.2/school-day-0.6.2-x86_64.flatpak) доступен в основном репозитории.
+**Linux x86-64.** Установите Flatpak и откройте файл установки в центре приложений. [Установка Flatpak](https://flathub.org/en/setup) · [Файл установки «Школьного дня»](https://sqeezy-53.github.io/school-day-flatpak/school-day.flatpakref)
 
-Пакет открывается в центре приложений. Для ручного обновления установите файл новой версии поверх текущей.
+Обновления из подписанного источника появятся в центре приложений. Отдельный файл `.flatpak` можно скачать на [странице выпусков](https://github.com/sqeezy-53/school-day-flatpak/releases).
 
 ## Участие в проекте
 
