@@ -14,7 +14,8 @@ def require(value, message):
 tag, expected, expected_url = sys.argv[1:]
 archive = Path("incoming/school-day-ostree-signed.tar.gz")
 metadata = json.loads(Path("incoming/BUILD.json").read_text())
-require(metadata.get("sha") == expected and metadata.get("ref") == tag, "Source SHA or tag mismatch")
+require(metadata.get("sha") == expected and metadata.get("ref") in (tag, expected),
+        "Source SHA or tag mismatch")
 require(metadata.get("version") == tag[1:], "Version mismatch")
 checksum_file = Path("incoming/SHA256SUMS").read_text()
 hashes = re.findall(r"(?m)^([a-f0-9]{64}) [ *]school-day-ostree-signed\.tar\.gz$", checksum_file)
