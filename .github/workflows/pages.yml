@@ -1,0 +1,81 @@
+name: Опубликовать подписанный OSTree
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Уже опубликованный выпуск School Day
+        type: string
+        required: true
+      expected_sha:
+        description: Полный SHA основного репозитория
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: signed-ostree-pages
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Получить только опубликованный подписанный пакет
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+          SOURCE_SHA: ${{ inputs.expected_sha }}
+        run: |
+          [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(gh release view "$TAG" --json isDraft,isPrerelease --jq '.isDraft or .isPrerelease')" = false
+          upstream=$(git ls-remote https://github.com/sqeezy-53/school-day.git "refs/tags/$TAG^{}")
+          if [[ -z "$upstream" ]]; then
+            upstream=$(git ls-remote https://github.com/sqeezy-53/school-day.git "refs/tags/$TAG")
+          fi
+          test "$(cut -f1 <<<"$upstream")" = "$SOURCE_SHA"
+          gh release download "$TAG" -D incoming -p school-day-ostree-signed.tar.gz -p SHA256SUMS -p BUILD.json
+          python3 ci/validate-pages.py "$TAG" "$SOURCE_SHA" https://sqeezy-53.github.io/school-day-flatpak/repo/
+      - name: Проверить закреплённый ключ и установить локальный remote
+        env:
+          FINGERPRINT: ${{ vars.FLATPAK_GPG_FINGERPRINT }}
+          FLATPAK_USER_DIR: ${{ runner.temp }}/flatpak-verification
+        run: |
+          [[ "$FINGERPRINT" =~ ^([A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})$ ]]
+          sudo apt-get update
+          sudo apt-get install -y flatpak ostree gnupg
+          export GNUPGHOME
+          GNUPGHOME=$(mktemp -d)
+          sed -n 's/^GPGKey=//p' site/school-day.flatpakrepo | base64 --decode > "$RUNNER_TEMP/release.pub"
+          gpg --batch --with-colons --show-keys "$RUNNER_TEMP/release.pub" > "$RUNNER_TEMP/keyinfo"
+          test "$(cut -d: -f1 < "$RUNNER_TEMP/keyinfo" | awk '$1=="pub" {n++} END {print n+0}')" = 1
+          verified=$(awk -F: '$1=="fpr" && !seen++ {print $10}' "$RUNNER_TEMP/keyinfo")
+          test "$verified" = "${FINGERPRINT^^}"
+          ostree --repo=site/repo fsck
+          local_repo=$(realpath site/repo)
+          sed "s|^Url=.*|Url=file://$local_repo/|" site/school-day.flatpakrepo > "$RUNNER_TEMP/verify.flatpakrepo"
+          flatpak remote-add --user school-day "$RUNNER_TEMP/verify.flatpakrepo"
+          flatpak install --user --noninteractive --no-deps school-day io.github.sqeezy_53.school-day//master
+          test "$(flatpak info --user --show-origin io.github.sqeezy_53.school-day)" = school-day
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        with:
+          path: site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
+        id: deployment
