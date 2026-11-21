@@ -1,0 +1,31 @@
+name: Проверить конфигурацию CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Проверить Python и shell
+        run: |
+          python3 -m unittest discover -s ci -v
+          python3 -m compileall -q ci
+          for script in ci/*.sh; do bash -n "$script"; done
+      - name: Проверить workflows
+        run: |
+          cd "$RUNNER_TEMP"
+          curl --proto '=https' --proto-redir '=https' --fail --silent --show-error --location \
+            --retry 3 https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            --output actionlint.tar.gz
+          echo '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  actionlint.tar.gz' | sha256sum -c
+          tar -xf actionlint.tar.gz actionlint
+          cd "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/actionlint"

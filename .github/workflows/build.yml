@@ -1,0 +1,61 @@
+name: Flatpak из фиксированных исходников
+on:
+  pull_request:
+    paths:
+      - 'ci/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Полный SHA или существующий тег School Day
+        required: true
+        type: string
+      expected_sha:
+        description: Проверенный SHA тега для режима prepare
+        type: string
+      mode:
+        description: Тестовая сборка или подготовка к подписи
+        type: choice
+        options: [test, prepare]
+        default: test
+permissions:
+  contents: read
+concurrency:
+  group: flatpak-${{ inputs.source || github.ref }}-${{ inputs.mode || 'test' }}
+  cancel-in-progress: false
+jobs:
+  flatpak:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Проверить источник
+        id: source
+        env:
+          SOURCE: ${{ inputs.source || 'v0.6.2' }}
+          EXPECTED: ${{ inputs.expected_sha || (github.event_name == 'pull_request' && '0410de6935c3740777afd3c420644a34b37ffd08') || '' }}
+          MODE: ${{ inputs.mode || 'test' }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ "$MODE" != test ]]; then test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"; fi
+          python3 ci/source.py --platform flatpak --ref "$SOURCE" --expected "$EXPECTED" --mode "$MODE" --directory source
+      - name: Установить средства сборки
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder ostree gnupg appstream
+          rustup toolchain install 1.98.1 --profile minimal
+      - name: Собрать и перепроверить OSTree и Flatpak
+        env:
+          RUSTUP_TOOLCHAIN: 1.98.1
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          SOURCE_VERSION: ${{ steps.source.outputs.version }}
+          SOURCE_REF: ${{ steps.source.outputs.ref }}
+        run: bash ci/build.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: school-day-flatpak-${{ steps.source.outputs.version }}-${{ steps.source.outputs.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14

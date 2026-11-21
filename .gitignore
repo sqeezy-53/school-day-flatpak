@@ -1,0 +1,15 @@
+/source/
+/dist/
+/build-work/
+/.github-local/
+__pycache__/
+*.apk
+*.flatpak
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+*.gpg
+*.asc
+.env*
