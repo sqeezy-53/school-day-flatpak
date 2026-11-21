@@ -1,17 +1,43 @@
-# School Day для Linux
+<img src="https://raw.githubusercontent.com/sqeezy-53/school-day/8e05f78edee3728af07e1d8a31701f5b99bfae0b/packaging/icons/io.github.sqeezy_53.school-day.svg" width="72" alt="Логотип">
 
-Репозиторий сборки и выпуска Flatpak. Исходники приложения находятся в [sqeezy-53/school-day](https://github.com/sqeezy-53/school-day). Код приложения распространяется по GPL-3.0-only.
+# Школьный день
 
-## Тестовая сборка
+Бесплатная программа с открытым исходным кодом для управления расписанием уроков и домашними заданиями.
 
-Запустите workflow «Flatpak из фиксированных исходников» с полным SHA или существующим тегом. Добавьте проверенный SHA в поле expected_sha, чтобы запуск также проверил соответствие тега. Артефакт Actions содержит Flatpak, исходники, SHA256SUMS, BUILD.json с исходным SHA и исходный OSTree для подготовки обновлений. Проверьте SHA256SUMS в распакованном каталоге и установите тестовый файл командой flatpak install --user ./school-day-ВЕРСИЯ-x86_64.flatpak.
+![Расписание — Школьный день 0.5.0](https://raw.githubusercontent.com/sqeezy-53/school-day/8e05f78edee3728af07e1d8a31701f5b99bfae0b/docs/screenshots/schedule-0.5.0.png)
 
-## Подготовка обновления
+<details>
+<summary>Ещё скриншоты</summary>
 
-Для режима prepare укажите подтверждённый тег и ожидаемый SHA. Он должен совпасть с версией в Cargo.toml. Полученное дерево OSTree проходит fsck, bundle повторно импортируется и проверяется на совпадение OSTree-коммита. В стабильный канал выпуск допускается после проверки подписи и перехода с предыдущей версии.
+![Домашние задания — Школьный день 0.5.0](https://raw.githubusercontent.com/sqeezy-53/school-day/8e05f78edee3728af07e1d8a31701f5b99bfae0b/docs/screenshots/homework-0.5.0.png)
 
-Запустите ci/stage-signed.sh локально с артефактом, чистым checkout того же коммита, копией текущего дерева публикации, публичным HTTPS-адресом каталога repo, частным каталогом GPG и полным отпечатком постоянного ключа. Скрипт вызывает упаковщик подписанного OSTree из исходного репозитория. Сохраните прежние объекты. Опубликуйте подготовленное дерево целиком на выбранном HTTPS-хостинге после отдельного разрешения. В приватном репозитории Pages зависит от тарифа, а опубликованный сайт может быть доступен публично. Самостоятельный статический HTTPS-хостинг и Flathub остаются подходящими вариантами после согласования.
+![Настройки — Школьный день 0.5.0](https://raw.githubusercontent.com/sqeezy-53/school-day/8e05f78edee3728af07e1d8a31701f5b99bfae0b/docs/screenshots/settings-0.5.0.png)
 
-Для установки из подписанного источника используйте school-day.flatpakref с проверенным отпечатком. Для перехода со старой установки сохраните копию данных и выполните миграцию с сохранением App ID и ветки master. Подробности описаны в docs/flatpak-updates.md основного проекта.
+</details>
 
-GPG-ключ остаётся у сопровождающего. Тестовые запуски не получают секретов. Публикация подписанного дерева и черновика GitHub Release выполняется после приемки.
+
+## Установка
+
+**Linux x86_64:** установите [Flatpak](https://flathub.org/en/setup) и [скачайте пакет](https://github.com/sqeezy-53/school-day/releases/download/v0.6.2/school-day-0.6.2-x86_64.flatpak).
+
+```sh
+flatpak install --user ./school-day-0.6.2-x86_64.flatpak
+flatpak run io.github.sqeezy_53.school-day
+```
+
+## Обновление
+
+Скачайте пакет новой версии и установите его поверх текущего через центр приложений или команду `flatpak install --user --reinstall ./имя-пакета.flatpak`.
+
+## Участие в проекте
+
+Нашли ошибку или хотите предложить улучшение?
+Создайте [Issue](https://github.com/sqeezy-53/school-day/issues).
+
+Хотите помочь с разработкой? Отправьте Pull Request.
+
+[Сборка и выпуск](docs/release.md)
+
+### Лицензия
+
+Проект распространяется по лицензии GPL-3.0.
